@@ -42,13 +42,29 @@ public:
         for (size_t i = 0; i < size; ++i) {
             simp_vec[i] = move(Type());
         }
-        //fill(simp_vec.Get(), simp_vec.Get() + size, def_value);
+        
+        // Не совсем понимаю, что нужно сделать
+        // Данная реализация ниже не работает с class X  
+        //SimpleVector(size, def_value);  //сообщает, что: "X &X::operator =(const X &)": предпринята попытка ссылки на удаленную функцию
+        //SimpleVector(size, Type()); 
+
+        //можно еще так:
+        //generate(simp_vec.Get(), simp_vec.Get() + size_, [] {return Type(); });
     }
 
     // Создаёт вектор из size элементов, инициализированных значением value
     SimpleVector(size_t size, const Type& value) : size_(size), capacity_(size), simp_vec(size) {
         fill(simp_vec.Get(), simp_vec.Get() + size, value);
     }
+
+    //это так же работать не будет, потому что после первого мува перемещать больше будет нечего
+    //тест на ресайз - валится, когда идет попытка обращения по индексу - там уже значение не 0, а мусор, но тесты, предложенные авторами - проходит.
+    //SimpleVector(size_t size, Type&& value) : size_(size), capacity_(size), simp_vec(size) {
+    //    for (auto it = simp_vec.Get(); it != simp_vec.Get() + size_; ++it) {
+    //        *it = move(value);        
+    //    }
+    //    //generate(simp_vec.Get(), simp_vec.Get() + size_, [value] {return value; });
+    //}
     
     // Создает вектор заранее заданной емкости с помощью вспомогательного класса обертки
     SimpleVector(const ReserveProxyObj& some_object) {
@@ -74,7 +90,9 @@ public:
     }
 
     SimpleVector& operator=(SimpleVector&& other) noexcept {
-        assert(simp_vec.Get() != other.simp_vec.Get());
+        if (simp_vec.Get() == other.simp_vec.Get())
+            return *this;
+        
         simp_vec.swap(other.simp_vec);
         size_ = exchange(other.size_, 0);
         capacity_ = exchange(other.capacity_, 0);
@@ -82,7 +100,9 @@ public:
     }
 
     SimpleVector& operator=(const SimpleVector& rhs) {
-        assert(this != &rhs);
+        if (this == &rhs)
+            return *this;
+
         SimpleVector<Type> tmp(rhs);
         swap(tmp);
 
@@ -91,11 +111,13 @@ public:
 
     // Возвращает ссылку на элемент с индексом index
     Type& operator[](size_t index) noexcept {
+        assert(index < size_);
         return simp_vec[index];
     }
 
     // Возвращает константную ссылку на элемент с индексом index
     const Type& operator[](size_t index) const noexcept {
+        assert(index < size_);
         return simp_vec[index];
     }
 
@@ -103,7 +125,7 @@ public:
     // Выбрасывает исключение std::out_of_range, если index >= size
     Type& At(size_t index) {
         if (index >= size_)
-            throw out_of_range("");
+            throw out_of_range("Index is out of range"s);
         return simp_vec[index];
     }
 
@@ -111,7 +133,7 @@ public:
     // Выбрасывает исключение std::out_of_range, если index >= size
     const Type& At(size_t index) const {
         if (index >= size_)
-            throw out_of_range("");
+            throw out_of_range("Index is out of range"s);
         return simp_vec[index];
     }
 
@@ -127,9 +149,7 @@ public:
 
     // Сообщает, пустой ли массив
     bool IsEmpty() const noexcept {
-        if (size_ == 0)
-            return true;
-        return false;
+        return size_ == 0;
     }
 
     // Обнуляет размер массива, не изменяя его вместимость
@@ -176,26 +196,19 @@ public:
     // Изменяет размер массива.
     // При увеличении размера новые элементы получают значение по умолчанию для типа Type
     void Resize(size_t new_size) {
-        if (new_size <= size_) {
-            size_ = new_size;
-        }
-        else if (new_size > size_ && new_size <= capacity_) {
-            //auto start_range = simp_vec.Get() + size_;
-            //auto end_range = start_range + (new_size - size_);
+        if (new_size > size_ && new_size <= capacity_) {
             for (size_t i = size_; i < new_size; ++i) {
                 simp_vec[i] = move(Type());
             }
-            //fill(start_range, end_range, def_value);
-            size_ = exchange(new_size, 0);
         }
         else if (new_size > capacity_) {
             size_t new_capacity = max(capacity_ * 2, new_size);
             SimpleVector<Type> tmp(new_capacity);
             move(simp_vec.Get(), simp_vec.Get() + size_, tmp.begin());
             simp_vec.swap(tmp.simp_vec);
-            size_ = exchange(new_size, 0);
-            capacity_ = exchange(new_capacity, 0);
+            capacity_ = new_capacity;
         }
+        size_ = new_size;
     }
 
     //Задает емкость вектора
@@ -215,7 +228,6 @@ public:
     void PushBack(const Type& item) {
         if (size_ < capacity_) {
             simp_vec[size_] = item;
-            ++size_;
         }
         else {
             if (capacity_ == 0) {
@@ -228,15 +240,14 @@ public:
             tmp[size_] = item;
 
             simp_vec.swap(tmp.simp_vec);
-            ++size_;
             capacity_ = new_capacity;
         }
+        ++size_;
     }
 
     void PushBack(Type&& item) {
         if (size_ < capacity_) {
             simp_vec[size_] = move(item);
-            ++size_;
         }
         else {
             if (capacity_ == 0) {
@@ -248,24 +259,23 @@ public:
             tmp[size_] = move(item);
 
             simp_vec.swap(tmp.simp_vec);
-            ++size_;
             capacity_ = exchange(new_capacity, 0);
         }
+        ++size_;
     }
     // Вставляет значение value в позицию pos.
     // Возвращает итератор на вставленное значение
     // Если перед вставкой значения вектор был заполнен полностью,
     // вместимость вектора должна увеличиться вдвое, а для вектора вместимостью 0 стать равной 1
     Iterator Insert(ConstIterator pos, const Type& value) {
+        if ((pos < simp_vec.Get()) || (pos > simp_vec.Get() + size_))
+            throw out_of_range("This position is out of range"s);
+        
+        auto position = pos - simp_vec.Get();
+
         if (size_ < capacity_) {
-            auto position = pos - simp_vec.Get();
-
             copy_backward(simp_vec.Get() + position, simp_vec.Get() + size_, simp_vec.Get() + size_ + 1);
-
             simp_vec[position] = value;
-            ++size_;
-
-            return simp_vec.Get() + position;
         }
         else {
             if (capacity_ == 0) {
@@ -273,29 +283,27 @@ public:
             }
             size_t new_capacity = capacity_ * 2;
             SimpleVector<Type> tmp(new_capacity);
-            auto position = pos - simp_vec.Get();
 
             copy(simp_vec.Get(), simp_vec.Get() + position, tmp.begin());
             tmp[position] = value;
 
             copy(simp_vec.Get() + position, simp_vec.Get() + size_, tmp.begin() + position + 1);
             simp_vec.swap(tmp.simp_vec);
-            ++size_;
             capacity_ = new_capacity;
-
-            return simp_vec.Get() + position;
         }
+        ++size_;
+        return simp_vec.Get() + position;
     }
 
     Iterator Insert(ConstIterator pos, Type&& value) {
-        if (size_ < capacity_) {
-            auto position = pos - simp_vec.Get();
+        if ((pos < simp_vec.Get()) || (pos > simp_vec.Get() + size_))
+            throw out_of_range("This position is out of range"s);
 
+        auto position = pos - simp_vec.Get();
+
+        if (size_ < capacity_) {
             move_backward(simp_vec.Get() + position, simp_vec.Get() + size_, simp_vec.Get() + size_ + 1);
             simp_vec[position] = move(value);
-            ++size_;
-
-            return simp_vec.Get() + position;
         }
         else {
             if (capacity_ == 0) {
@@ -303,18 +311,16 @@ public:
             }
             size_t new_capacity = capacity_ * 2;
             SimpleVector<Type> tmp(new_capacity);
-            auto position = pos - simp_vec.Get();
 
             move(simp_vec.Get(), simp_vec.Get() + position, tmp.begin());
             tmp[position] = move(value);
 
             move(simp_vec.Get() + position, simp_vec.Get() + size_, tmp.begin() + position + 1);
             simp_vec.swap(tmp.simp_vec);
-            ++size_;
             capacity_ = exchange(new_capacity, 0);
-
-            return simp_vec.Get() + position;
         }
+        ++size_;
+        return simp_vec.Get() + position;
     }
 
     // "Удаляет" последний элемент вектора. Вектор не должен быть пустым
@@ -325,8 +331,10 @@ public:
 
     // Удаляет элемент вектора в указанной позиции
     Iterator Erase(ConstIterator pos) {
+        if (IsEmpty() || ((pos < simp_vec.Get()) || (pos > simp_vec.Get() + size_)))
+            throw out_of_range("This position is out of range or vector is empty"s);
+
         auto position = pos - simp_vec.Get();
-        //copy(simp_vec.Get() + position + 1, simp_vec.Get() + size_, simp_vec.Get() + position);
         move(simp_vec.Get() + position + 1, simp_vec.Get() + size_, simp_vec.Get() + position);
         --size_;
 

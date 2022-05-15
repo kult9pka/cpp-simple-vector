@@ -30,14 +30,14 @@ public:
     // Запрещаем копирование
     ArrayPtr(const ArrayPtr&) = delete;
 
-    /*ArrayPtr(ArrayPtr&& other) noexcept {
+    ArrayPtr(ArrayPtr&& other) noexcept {
         raw_ptr_ = exchange(other.raw_ptr_, nullptr);
-    }*/
+    }
 
-    //ArrayPtr& operator=(ArrayPtr&& other) {
-    //    raw_ptr_ = exchange(other.raw_ptr_, nullptr);
-    //    return *this;
-    //}
+    ArrayPtr& operator=(ArrayPtr&& other) noexcept {
+        raw_ptr_ = exchange(other.raw_ptr_, nullptr);
+        return *this;
+    }
 
     ~ArrayPtr() {
         delete[] raw_ptr_;

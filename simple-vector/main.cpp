@@ -133,6 +133,19 @@ void TestNamedMoveConstructor() {
      v.Insert(v.begin() + 3, X(size + 3));
      assert(v.GetSize() == size + 3);
      assert((v.begin() + 3)->GetX() == size + 3);
+     // вне диапазона
+     try {
+         v.Insert(v.end() + 1, X(size + 4));
+     }
+     catch (const out_of_range& error) {
+         cout << "<exception catched>: " << error.what() << endl;
+     }
+     try {
+         v.Insert(v.begin() - 1, X(size + 4));
+     }
+     catch (const out_of_range& error) {
+         cout << "<exception catched>: " << error.what() << endl;
+     }
      cout << "Done!" << endl << endl;
  }
 
@@ -143,9 +156,21 @@ void TestNamedMoveConstructor() {
      for (size_t i = 0; i < size; ++i) {
          v.PushBack(X(i));
      }
-
      auto it = v.Erase(v.begin());
      assert(it->GetX() == 1);
+     try {
+         auto test = v.Erase(v.begin() + 4);
+     }
+     catch (const out_of_range& error) {
+         cout << "<exception catched>: " << error.what() << endl;
+     }
+     v.Clear();
+     try {
+         auto test = v.Erase(v.begin());
+     }
+     catch (const out_of_range& error) {
+         cout << "<exception catched>: " << error.what() << endl;
+     }
      cout << "Done!" << endl << endl;
  }
 
@@ -232,6 +257,10 @@ void TestNamedMoveConstructor() {
          assert(v.GetSize() == 7);
          assert(v.GetCapacity() >= v.GetSize());
          assert(v[2] == 17);
+         //for (auto c : v) {
+         //    cout << c << " ";
+         //}
+         cout << endl;
          assert(v[3] == 0);
      }
      {
@@ -306,6 +335,6 @@ int main() {
     TestNoncopiableInsert();
     TestNoncopiableErase();
     Testes();
-
+    cout << "All tests are OK" << endl;
     return 0;
 }
