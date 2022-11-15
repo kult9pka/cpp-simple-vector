@@ -39,32 +39,13 @@ public:
 
     // Создаёт вектор из size элементов, инициализированных значением по умолчанию
     explicit SimpleVector(size_t size) : size_(size), capacity_(size), simp_vec(size) {
-        for (size_t i = 0; i < size; ++i) {
-            simp_vec[i] = move(Type());
-        }
-        
-        // Не совсем понимаю, что нужно сделать
-        // Данная реализация ниже не работает с class X  
-        //SimpleVector(size, def_value);  //сообщает, что: "X &X::operator =(const X &)": предпринята попытка ссылки на удаленную функцию
-        //SimpleVector(size, Type()); 
-
-        //можно еще так:
-        //generate(simp_vec.Get(), simp_vec.Get() + size_, [] {return Type(); });
+        fill(simp_vec.Get(), simp_vec.Get() + size, Type());
     }
 
     // Создаёт вектор из size элементов, инициализированных значением value
     SimpleVector(size_t size, const Type& value) : size_(size), capacity_(size), simp_vec(size) {
         fill(simp_vec.Get(), simp_vec.Get() + size, value);
     }
-
-    //это так же работать не будет, потому что после первого мува перемещать больше будет нечего
-    //тест на ресайз - валится, когда идет попытка обращения по индексу - там уже значение не 0, а мусор, но тесты, предложенные авторами - проходит.
-    //SimpleVector(size_t size, Type&& value) : size_(size), capacity_(size), simp_vec(size) {
-    //    for (auto it = simp_vec.Get(); it != simp_vec.Get() + size_; ++it) {
-    //        *it = move(value);        
-    //    }
-    //    //generate(simp_vec.Get(), simp_vec.Get() + size_, [value] {return value; });
-    //}
     
     // Создает вектор заранее заданной емкости с помощью вспомогательного класса обертки
     SimpleVector(const ReserveProxyObj& some_object) {
@@ -354,9 +335,6 @@ private:
     ArrayPtr<Type> simp_vec;
     Type def_value = Type();
 };
-
-
-//--------------------------ПЕРЕГРУЗКА ОПЕРАТОРОВ СРАВНЕНИЯ--------------------------//
 
 template <typename Type>
 inline bool operator==(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs) {
