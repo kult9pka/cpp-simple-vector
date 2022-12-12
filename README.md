@@ -1,42 +1,45 @@
 # cpp-simple-vector
-Финальный проект: собственный контейнер вектор
-## Разработка простого контейнера 
+## Additional languages: [Русский](Russian/README.md)
+
+## Realisation of sequenced container - vector
 ### simple_vector.h
-Разработан шаблонный класс SimpleVector. Это сильно упрощённый аналог стандартного контейнера vector, со сходной структурой и функционалом.
+Developed template class SimpleVector. This is a highly simplified analog of the STL vector container, with a similar structure and functionality.
 
-Реализован функционал:
-*	Конструкторы.
-    * По умолчанию. Создаёт пустой вектор с нулевой вместимостью.
-    * Параметризованный конструктор, создающий вектор заданного размера.
-    * Конструктор из std::initializer_list.
-*	Конструктор копирования. 
-*	Оператор присваивания. 
-*	Метод **GetSize** для получения количества элементов в векторе.
-*	Метод **GetCapacity** для получения вместимости вектора.
-*	Метод **IsEmpty**, сообщающий, пуст ли вектор.
-*	Оператор **[]** для доступа к элементу вектора по его индексу.
-*	Метод **At** для доступа к элементу вектора по его индексу.
-*	Метод **Clear** для очистки массива без изменения его вместимости.
-*	Метод **Resize** для изменения количества элементов в массиве. 
-*	Методы **begin**, **end**, **cbegin** и **cend**, возвращающие итераторы на начало и конец массива.
-*	Метод **PushBack**, добавляющий элемент в конец вектора. 
-*	Метод **PopBack**, удаляющий последний элемент вектора. 
-*	Метод **Insert**, вставляющий элемент в произвольное место контейнера. 
-*	Метод **Erase**, удаляющий элемент в произвольной позиции вектора. 
-*	Метод **swap**, обменивающий содержимое вектора с другим вектором.
-*	Метод **Reserve**, задает ёмкость вектора.
-*	Операторы **==** и **!=**.
-*	Операторы **<**, **>**, **<=**, **>=**, выполняющие лексикографическое сравнение содержимого двух векторов.
-*	Поддержка семантики перемещения
+Main features realised:
+*	Constructors.
+    * By default. Creates an empty container with zero capacity.
+    * Constructor that creates a container of a given size.
+    * Constructor from std::initializer_list.
+*	Copy constructor. 
+*	Assignment operator. 
+*	Operators **==** and **!=**.
+*	Operators **<**, **>**, **<=**, **>=**, performing lexicographic comparison of the contents of two containers.
+*	Operator **[]** returns a reference to the element at specified location.
+*	Move semantics support.
+*	Methods:
+	* **GetSize** returns the number of elements in the container.
+	* **GetCapacity** returns capacity of the currently allocated storage.
+	* **IsEmpty**, returns true if the container is empty, false otherwise
+	* **At** returns reference to the requested element.
+	* **Clear** erases all elements from the container. Leaves the capacity of the containter unchanged. 
+	* **Resize** resizes the container. 
+	* **begin**, **end**, **cbegin** and **cend**, returns an iterator to the first(last for end/cend) element of the container.
+	* **PushBack**, appends the given element value to the end of the container. 
+	* **PopBack**, removes the last element of the container.
+	* **Insert**, inserts element at the specified location in the container.
+	* **Erase**, erases the specified element from the container. 
+	* **swap**, exchanges the contents of the container with those of other.
+	* **Reserve**, increases the capacity of the container.
+
 ### array_ptr.h
-Разработан шаблонный класс ArrayPtr, играющий роль умного указателя на массив в динамической памяти.
+Developed a template class ArrayPtr, that plays a role of a smart pointer to an array in dynamic memory.
 
-Реализован функционал:
-*	Удаление массива при разрушении умного указателя;
-*	Конструкторы: 
-    * По умолчанию.
-    * Из указателя на существующий массив, создающий новый массив заданного размера
-*	Доступ к элементу массива по индексу;
-*	Запрет операций копирования и присваивания;
-*	Метод **swap** для обмена содержимым с другим объектом ArrayPtr;
-*	Метод **Release**, прекращающий владение массивом и возвращающий значение сырого указателя.
+Main features realised:
+*	Array deleting if smart pointer is destroyed.
+*	Constructors: 
+    * By default.	
+    * From a pointer to an existing array. Makes a new array of specified size.
+*	Accessing an array element by index.
+*	Disabled copy and assignment operations.
+*	**swap** exchanges the contents with other ArrayPtr object.
+*	**Release**, releases the ownership of the managed array. Returns raw pointer to it.
